@@ -11,7 +11,7 @@ import torch.nn.functional as F
 from yolov3_model import ANCHOR_MASKS, YOLOv3Detector, to_nchw
 
 
-def box_iou_xywh(boxes1: torch.Tensor, boxes2: torch.Tensor) -> torch.Tensor:
+def box_iou_xywh(boxes1: torch.Tensor, boxes2: torch.Tensor) -> torch.Tensor: #1 hàm bổ trợ
     """Tính toán chỉ số IoU (Intersection over Union) giữa hai tập hợp bounding box dạng (x_center, y_center, width, height)."""
     boxes1 = boxes1.unsqueeze(-2)
     boxes2 = boxes2.unsqueeze(0)
@@ -34,7 +34,7 @@ def box_iou_xywh(boxes1: torch.Tensor, boxes2: torch.Tensor) -> torch.Tensor:
     return intersection / (area1 + area2 - intersection + 1e-6)
 
 
-def encode_yolo_targets(
+def encode_yolo_targets( #2
     boxes: np.ndarray,
     input_shape: tuple[int, int],
     anchors: np.ndarray,
@@ -107,7 +107,7 @@ def encode_yolo_targets(
     return targets
 
 
-class YOLOv3TOGModel:
+class YOLOv3TOGModel: #lớp chính
     """Lớp bao bọc (wrapper) mô hình YOLOv3, cung cấp các hàm tính mất mát (loss) và đạo hàm (gradient) cho tấn công TOG."""
 
     def __init__(self, detector: YOLOv3Detector):
@@ -123,7 +123,7 @@ class YOLOv3TOGModel:
         """Thực thi dự đoán (inference) trên ảnh đầu vào."""
         return self.detector.detect(image, **kwargs)
 
-    def _decode_for_loss(
+    def _decode_for_loss( #1
         self,
         prediction: torch.Tensor,
         anchors: np.ndarray,
@@ -151,7 +151,7 @@ class YOLOv3TOGModel:
         box_wh = torch.exp(prediction[..., 2:4].clamp(max=10)) * anchor_tensor / input_size
         return grid, box_xy, box_wh
 
-    def _objectness_loss(self, predictions: list[torch.Tensor], targets: list[torch.Tensor]) -> torch.Tensor:
+    def _objectness_loss(self, predictions: list[torch.Tensor], targets: list[torch.Tensor]) -> torch.Tensor: #2
         """Tính tổng hàm mất mát Binary Cross-Entropy của Objectness trên tất cả quy mô (scales) YOLO."""
         loss = predictions[0].new_zeros(())
         for prediction, target in zip(predictions, targets):
@@ -159,7 +159,7 @@ class YOLOv3TOGModel:
             loss += F.binary_cross_entropy_with_logits(prediction[..., 4:5], target[..., 4:5], reduction="sum")
         return loss
 
-    def _full_yolo_loss(self, predictions: list[torch.Tensor], targets: list[torch.Tensor]) -> torch.Tensor:
+    def _full_yolo_loss(self, predictions: list[torch.Tensor], targets: list[torch.Tensor]) -> torch.Tensor: #3
         """Tính tổng hàm mất mát YOLOv3 đầy đủ (gồm vị trí box, objectness, và phân loại lớp) cho tấn công TOG."""
         batch_size = float(predictions[0].shape[0])
         total_loss = predictions[0].new_zeros(())
