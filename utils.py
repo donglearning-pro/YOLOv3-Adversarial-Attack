@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from typing import Literal
+import os
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 
 import matplotlib.pyplot as plt
 import numpy as np

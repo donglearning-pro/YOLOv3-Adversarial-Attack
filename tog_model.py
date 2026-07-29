@@ -223,14 +223,25 @@ class YOLOv3TOGModel: #lớp chính
 
     def _targets_from_detections(self, detections: np.ndarray | None) -> list[torch.Tensor]:
         """Chuyển đổi các phát hiện dạng mảng numpy thành danh sách tensor target chuẩn hóa trên thiết bị (GPU/CPU)."""
+        # Kiểm tra nếu không có vật thể/dự đoán nào truyền vào
         if detections is None or np.asarray(detections).size == 0:
+            # Tạo mảng rỗng có kích thước (1, 0, 5) đại diện cho 0 vật thể với 5 thông số [x1, y1, x2, y2, class_id]
             boxes = np.empty((1, 0, 5), dtype=np.float32)
         else:
+            # Chuyển đổi dữ liệu detections thành mảng NumPy chuẩn dạng float32
             detections = np.asarray(detections, dtype=np.float32)
+            
+            # Kiểm tra định dạng mảng: phải là mảng 2 chiều và chứa đủ các cột thông tin
             if detections.ndim != 2 or detections.shape[1] < 6:
                 raise ValueError("detections must be a two-dimensional detector output array.")
+            
+            # Trích xuất 5 thông tin quan trọng [x1, y1, x2, y2, class_id] và thêm chiều Batch (1, N, 5)
             boxes = detections[:, [-4, -3, -2, -1, 0]][None, ...]
+            
+        # Mã hóa tọa độ bounding box thành cấu trúc lưới 3D theo các thang đo (scales) và Anchor boxes của YOLOv3
         encoded = encode_yolo_targets(boxes, self.model_image_size, self.anchors, self.num_classes)
+        
+        # Chuyển các mảng mã hóa thành PyTorch Tensor và đẩy lên thiết bị tính toán (CPU hoặc GPU)
         return [torch.from_numpy(target).to(self.device) for target in encoded]
 
     def _image_gradient(
@@ -239,17 +250,31 @@ class YOLOv3TOGModel: #lớp chính
         loss_function: Callable[[list[torch.Tensor]], torch.Tensor],
     ) -> np.ndarray:
         """Thực hiện lan truyền ngược (backpropagation) để tính đạo hàm (gradient) của hàm loss theo ảnh đầu vào."""
+        # Chuyển ảnh từ NumPy (HWC) sang PyTorch Tensor (NCHW), đẩy lên GPU/CPU và bật tracking gradient trên pixel ảnh
         input_tensor = to_nchw(image, self.device).detach().requires_grad_(True)
+        
+        # Xóa các gradient cũ tích lũy trong các trọng số của mạng YOLOv3
         self.detector.network.zero_grad(set_to_none=True)
+        
+        # Đưa ảnh qua mạng để lấy dự đoán, sau đó tính giá trị hàm tổn thất (loss) đối kháng
         loss = loss_function(self.detector.network(input_tensor))
+        
+        # Lan truyền ngược để tính toán gradient của hàm loss theo từng pixel trên input_tensor
         loss.backward()
+        
+        # Kiểm tra xem gradient có được tạo ra thành công hay không
         if input_tensor.grad is None:
             raise RuntimeError("The attack loss did not produce an input gradient.")
+            
+        # Tách gradient khỏi đồ thị tính toán, chuyển thứ tự chiều NCHW -> NHWC, đưa về CPU và chuyển thành mảng NumPy
         return input_tensor.grad.detach().permute(0, 2, 3, 1).cpu().numpy()
 
     def compute_object_vanishing_gradient(self, image: np.ndarray) -> np.ndarray:
         """Tính gradient giảm thiểu objectness (mục tiêu target = 0) để làm biến mất vật thể (Object Vanishing)."""
+        # Tạo nhãn target giả định hoàn toàn trống (xem như không có vật thể nào tồn tại trên ảnh)
         targets = self._targets_from_detections(None)
+        
+        # Tính gradient của hàm loss objectness giữa dự đoán của mạng với nhãn trống để dập tắt các vật thể
         return self._image_gradient(image, lambda predictions: self._objectness_loss(predictions, targets))
 
     def compute_object_fabrication_gradient(self, image: np.ndarray) -> np.ndarray:

@@ -9,7 +9,50 @@ from typing import Optional
 import numpy as np
 import torch
 import torch.nn as nn
-from torchvision.ops import nms
+# Tự định nghĩa hàm NMS bằng PyTorch thuần để tránh lỗi tương thích torchvision
+try:
+    from torchvision.ops import nms
+except (ImportError, RuntimeError):
+    def nms(boxes: torch.Tensor, scores: torch.Tensor, iou_threshold: float) -> torch.Tensor:
+        """Thực thi Non-Maximum Suppression (NMS) bằng PyTorch thuần."""
+        if boxes.numel() == 0:
+            return torch.empty((0,), dtype=torch.int64, device=boxes.device)
+            
+        x1 = boxes[:, 0]
+        y1 = boxes[:, 1]
+        x2 = boxes[:, 2]
+        y2 = boxes[:, 3]
+        areas = (x2 - x1) * (y2 - y1)
+        
+        _, order = scores.sort(0, descending=True)
+        keep = []
+        
+        while order.numel() > 0:
+            if order.numel() == 1:
+                i = order.item() if order.ndim > 0 else order
+                keep.append(i)
+                break
+            else:
+                i = order[0].item()
+                keep.append(i)
+                
+            xx1 = torch.max(x1[i], x1[order[1:]])
+            yy1 = torch.max(y1[i], y1[order[1:]])
+            xx2 = torch.min(x2[i], x2[order[1:]])
+            yy2 = torch.min(y2[i], y2[order[1:]])
+            
+            w = torch.clamp(xx2 - xx1, min=0.0)
+            h = torch.clamp(yy2 - yy1, min=0.0)
+            inter = w * h
+            
+            ovr = inter / (areas[i] + areas[order[1:]] - inter)
+            
+            ids = (ovr <= iou_threshold).nonzero(as_tuple=False).squeeze(1)
+            if ids.numel() == 0:
+                break
+            order = order[ids + 1]
+            
+        return torch.tensor(keep, dtype=torch.long, device=boxes.device)
 
 from utils import COCO_CLASSES
 
