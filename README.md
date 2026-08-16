@@ -21,25 +21,22 @@
 - [🚀 Quick Start & Environment Setup](#-quick-start--environment-setup)
 - [💻 Headless Execution (CLI)](#-headless-execution-cli)
 - [📊 Experimental Results & Metrics](#-experimental-results--metrics)
-- [🧪 Testing & Validation](#-testing--validation)
+- [🔮 Limitations & Future Work](#-limitations--future-work)
 - [👥 Team & Acknowledgments](#-team--acknowledgments)
 - [📜 Citations & References](#-citations--references)
 
 ## 📌 Overview
 
 This repository explores the adversarial vulnerabilities of **YOLOv3** under **Targeted Objectness Gradient (TOG)** attack strategies. By generating imperceptible, bounded perturbation patterns ($L_\infty$), we demonstrate how real-time object detection pipelines can be manipulated to cause missing detections, false positives, or misclassifications.
+Find more about our presentation in [this video](https://youtu.be/dB-AoBHEkTk?si=xwMAu80q4DhGd_5L) and [this slide](https://canva.link/y4c3uole0mptke7)
 
 ## 📸 Visual Demonstration
 
 Below is a side-by-side execution demo comparing raw YOLOv3 detections against the **TOG-Vanishing** adversarial attack on video input:
 
-<div align="center">
-  <video src="output_side_by_side.mp4" controls="controls" muted="muted" style="max-height: 480px;">
-    Your browser does not support the video tag.
-  </video>
-  
-  <p><i>Left: <b>BENIGN</b> &nbsp;|&nbsp; Right: <b>TOG-VANISHING ATTACK</b></i></p>
-</div>
+<p align="center">
+  <img src="assets/output_side_by_side.gif" width="90%" alt="Visual Demonstration">
+</p>
 
 ### 🌟 Hardware & Benchmark System Specs
 All benchmark experiments and metrics were executed on the following setup:
@@ -72,9 +69,7 @@ YOLOv3-Adversarial-Attack/
 ├── tog_model.py                # Gradient optimization loops & loss calculations
 ├── yolov3_model.py             # Darknet YOLOv3 wrapper & inference helper functions
 ├── utils.py                    # Pre/post-processing & visualization tools
-├── test_smoke.py               # Automated unit & sanity tests
 ├── environment.yml             # Conda environment definition (Python 3.12 / CUDA 13.0)
-├── Dockerfile                  # Runtime environment container definition
 ├── requirements.txt            # Python dependencies
 └── README.md                   # Repository documentation
 
@@ -97,17 +92,6 @@ YOLOv3-Adversarial-Attack/
 
 ## 🚀 Quick Start & Environment Setup
 
-### Option 1: Conda Environment (Recommended)
-
-```bash
-# Create and activate Python 3.12 / CUDA 13 environment
-conda env create -f environment.yml
-conda activate tog-yolov3
-
-```
-
-### Option 2: Pip Setup
-
 ```bash
 # Clone repository
 git clone https://github.com/donglearning-pro/YOLOv3-Adversarial-Attack.git
@@ -115,17 +99,6 @@ cd YOLOv3-Adversarial-Attack
 
 # Install dependencies
 python -m pip install -r requirements.txt
-
-```
-
-### Option 3: Docker
-
-```bash
-# Build image
-docker build -t tog-yolov3 .
-
-# Run with GPU support
-docker run --gpus all -it -v $(pwd):/workspace tog-yolov3
 
 ```
 
@@ -220,33 +193,51 @@ Vulnerability comparison of object categories based on pixel bounding box area u
 
 ---
 
-## 🧪 Testing & Validation
+## 🔮 Limitations & Future Work
 
-Run minimal environment checks to confirm model file loading, paths, and GPU acceleration:
+While this repository provides a complete white-box **Targeted Objectness Gradient (TOG)** attack baseline on YOLOv3, project timeline constraints left several threat models and architectures open for future exploration:
 
-```bash
-python -m unittest test_smoke.py
-
-```
+**⚠️ Current Limitations**
+* **White-Box Scope**: Currently restricted to full-access gradient attacks where model architecture and weights are known.
+* **Unexplored Threat Models**: 
+  * *Grey-box / Transfer Attacks*: Generating perturbations on a surrogate model to attack unseen target models is not implemented.
+  * *Black-box Attacks*: Query-based attack methods without access to gradients or weights were not explored.
+* **Single Detector Focus**: Benchmarking is currently limited to YOLOv3.
 
 ---
 
+**🚀 Future Roadmap & Next Steps**
+* **Multi-Architecture Support**: Extend TOG attack variants across diverse detection paradigms:
+  * **Modern One-Stage**: YOLOv5, YOLOv8, RetinaNet, CenterNet.
+  * **Two-Stage Detectors**: Faster R-CNN, Mask R-CNN.
+  * **Transformer-Based**: DETR and Deformable DETR.
+* **Transferability & Black-Box Attacks**: Implement surrogate-model training to evaluate cross-architecture transferability and develop query-based black-box optimization loops.
+* **Large-Scale Benchmarking**: Scale evaluations across the full MS COCO validation dataset while tracking comprehensive metrics ($\Delta\text{mAP@50}$, Target Success Rate, $L_p$ norms, SSIM, PSNR).
+* **MLOps & QA Integration**: Integrate automated experiment logging (e.g., **Weights & Biases** or **TensorBoard**) and expand unit test coverage across core attack modules.
+
 ## 👥 Team & Acknowledgments
 
-* **Program**: SEAS (Summer in Engineering and Applied Sciences)
-* **Team Members**:
-* Dương Phương Đông *(Team Leader)*
-* Hoàng Bình Minh
-* Trần Hoài Thương
-* Dương Xuân Quân
-* Lê Quang Huy
+### 👥 Team 1 Members
+* **Dương Phương Đông** *(Team Leader)*
+* **Hoàng Bình Minh**
+* **Trần Hoài Thương**
+* **Dương Xuân Quân**
+* **Lê Quang Huy**
 
+### 👨‍🏫 Project Mentors
+* **Nguyễn Tiết Khôi Nguyên**
+* **Nguyễn Xuân Minh Đức**
 
-* **Mentors**:
-* Nguyễn Tiết Khôi Nguyên
-* Nguyễn Xuân Minh Đức
+---
 
+### 🙏 Acknowledgments & Gratitude
 
+We would like to express our sincere appreciation to everyone who supported this project:
+
+* **SEAS Summer Camp (Summer in Engineering and Applied Sciences)**: For providing an exceptional platform, compute resources, and collaborative learning environment to explore adversarial machine learning.
+(SEAS is a Vietnam non-profit program providing free learning opportunities for high school students and mentorship from graduate students and industry experts. It is occured at Đồng Hới, Quảng Bình annually. Find more about [this awesome summer camp](https://seas-cvn.com/))
+* **Our Mentors (Nguyễn Tiết Khôi Nguyên & Nguyễn Xuân Minh Đức)**: For their dedicated guidance, invaluable technical feedback, and continuous encouragement throughout our research and implementation phase.
+* **Our Teammates**: For the relentless dedication, technical contribution, and great teamwork that made this project possible.
 
 ---
 
@@ -262,91 +253,3 @@ If you use this repository or build upon our work, please cite the following pap
 ## 📄 License
 
 This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
-
-```
-
----
-
-### 🔨 Supporting Repository Files (Updated for Python 3.12 & CUDA 13.0)
-
-#### 1. `environment.yml`
-```yaml
-name: tog-yolov3
-channels:
-  - pytorch
-  - nvidia
-  - conda-forge
-  - defaults
-dependencies:
-  - python=3.12
-  - pytorch
-  - torchvision
-  - pytorch-cuda=13.0
-  - numpy
-  - opencv
-  - pillow
-  - matplotlib
-  - scikit-image
-  - tqdm
-  - jupyter
-  - pip
-  - pip:
-    - -r requirements.txt
-
-```
-
-#### 2. `Dockerfile`
-
-```dockerfile
-FROM nvidia/cuda:13.0.0-devel-ubuntu22.04
-
-ENV PYTHONUNBUFFERED=1
-WORKDIR /workspace
-
-RUN apt-get update && apt-get install -y \
-    python3.12 \
-    python3-pip \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    git \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY requirements.txt .
-RUN python3.12 -m pip install --no-cache-dir -r requirements.txt
-
-COPY . .
-
-CMD ["python3.12", "test_smoke.py"]
-
-```
-
-#### 3. `test_smoke.py`
-
-```python
-import os
-import unittest
-import torch
-
-class TestTOGYOLOv3Environment(unittest.TestCase):
-    def test_cuda_availability(self):
-        """Verify CUDA 13.0 hardware acceleration support."""
-        self.assertTrue(torch.cuda.is_available(), "CUDA is not available. GPU is required for fast execution.")
-
-    def test_model_files_exist(self):
-        """Verify model configuration, weights, and class files exist in model directory."""
-        required_files = ["yolov3.weights", "yolov3", "class.names"]
-        for file in required_files:
-            file_path = os.path.join("model", file)
-            self.assertTrue(os.path.exists(file_path), f"Required model file missing: {file_path}")
-
-    def test_dataset_structure_exist(self):
-        """Verify dataset hierarchy under data/coco/."""
-        coco_dir = os.path.join("data", "coco")
-        self.assertTrue(os.path.exists(coco_dir), f"Directory missing: {coco_dir}")
-
-if __name__ == "__main__":
-    unittest.main()
-
-```
-
----
